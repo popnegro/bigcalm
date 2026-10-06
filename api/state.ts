@@ -2,6 +2,11 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { ensureDatabase, getDatabase } from "./_lib/database.js";
 import { cors, json, method } from "./_lib/http.js";
 
+type HomeRow = { id: string; name: string; timezone: string; armed: boolean };
+type DeviceRow = { id: string; name: string; kind: string; room: string; status: "online" | "offline" | "alert"; battery_percent: string | number | null; state: Record<string, unknown> | null; last_seen_at: string | Date };
+type EventRow = { id: string | number; timestamp: string; device_id: string | null; device_name: string; message: string; severity: "info" | "warning" | "critical" };
+type MetricRow = { metric: string; numeric_value: string | number };
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   cors(res);
   if (method(req) !== "GET") return json(res, 405, { error: "METHOD_NOT_ALLOWED" });
@@ -17,7 +22,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       FROM homes
       ORDER BY created_at ASC
       LIMIT 1
-    `;
+    ` as unknown as HomeRow[];
 
     const devices = await sql`
       SELECT
@@ -32,7 +37,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       FROM devices
       WHERE home_id = ${homes[0].id}
       ORDER BY kind DESC, name ASC
-    `;
+    ` as unknown as DeviceRow[];
 
     const events = await sql`
       SELECT
@@ -47,7 +52,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       WHERE d.home_id = ${homes[0].id} OR e.device_id IS NULL
       ORDER BY e.occurred_at DESC
       LIMIT 30
-    `;
+    ` as unknown as EventRow[];
 
     const metricsRows = await sql`
       SELECT metric, numeric_value
@@ -60,7 +65,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         WHERE device_id = 'gateway-01'
         ORDER BY metric, recorded_at DESC
       ) latest
-    `;
+    ` as unknown as MetricRow[];
 
     const metricMap = Object.fromEntries(metricsRows.map((row) => [row.metric, Number(row.numeric_value)]));
 
