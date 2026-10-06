@@ -23,6 +23,7 @@ function App() {
   const [armed, setArmed] = useState(() => window.localStorage.getItem("bigcalm-armed") !== "false");
   const [updatedAt, setUpdatedAt] = useState(nowLabel());
   const [remoteReady, setRemoteReady] = useState(false);
+  const [realtimeReady, setRealtimeReady] = useState(false);
 
   const onlineCount = devices.filter((device) => device.status === "online").length;
   const alertCount = devices.filter((device) => device.status === "alert").length;
@@ -89,9 +90,12 @@ function App() {
     };
 
     const unsubscribe = subscribeToRealtime({
-      onOpen: () => void syncRemoteState(),
+      onOpen: () => {
+        setRealtimeReady(true);
+        void syncRemoteState();
+      },
       onTelemetry: applyRealtime,
-      onError: () => undefined,
+      onError: () => setRealtimeReady(false),
     });
 
     void syncRemoteState();
@@ -102,35 +106,8 @@ function App() {
     };
   }, []);
 
-  useEffect(() => {
-    if (remoteReady) return;
+  // No simulamos datos cuando el backend está fuera de línea: preservamos el último estado conocido.
 
-    const timer = window.setInterval(() => {
-      setMetrics((current) => ({
-        temperature: Number(clamp(current.temperature + (Math.random() - 0.5) * 0.6, 18, 30).toFixed(1)),
-        humidity: Number(clamp(current.humidity + (Math.random() - 0.5) * 2, 35, 68).toFixed(0)),
-        power: Number(clamp(current.power + (Math.random() - 0.5) * 0.12, 0.45, 2.4).toFixed(2)),
-        wifi: Math.round(clamp(current.wifi + (Math.random() - 0.5) * 4, 80, 100)),
-      }));
-      setUpdatedAt(nowLabel());
-      setDevices((current) => current.map((device) => {
-        if (device.kind === "sensor" && Math.random() > 0.84) {
-          const isMotion = device.id === "motion-living";
-          const isDoor = device.id === "door-front";
-          const toggled = isMotion ? Math.random() > 0.55 : isDoor ? Math.random() > 0.65 : Math.random() > 0.8;
-          return {
-            ...device,
-            value: isMotion ? (toggled ? "Movimiento detectado" : "Sin movimiento") : isDoor ? (toggled ? "Abierta" : "Cerrada") : device.value,
-            lastSeen: nowLabel(),
-            status: "online",
-          };
-        }
-        return { ...device, lastSeen: "Hace <1 min" };
-      }));
-    }, 4000);
-
-    return () => window.clearInterval(timer);
-  }, [remoteReady]);
 
   useEffect(() => { document.title = "BigCalm — " + houseStatus; }, [houseStatus]);
 
@@ -171,7 +148,7 @@ function App() {
     <header className="topbar">
       <div className="brand-lockup"><div className="brand-mark" aria-hidden="true"><span /></div><div><strong>BigCalm</strong><small>Monitoreo doméstico</small></div></div>
       <nav className="main-nav" aria-label="Navegación principal">{navItems.map((item) => <button key={item.id} className={view === item.id ? "nav-button active" : "nav-button"} onClick={() => navigate(item.id)}>{item.label}</button>)}</nav>
-      <div className="topbar-actions"><div className="connection-pill"><span className="dot online" /> {remoteReady ? "API conectada" : "Modo demo local"}</div><button className={armed ? "arm-button armed" : "arm-button"} onClick={() => setArmed((current) => !current)} aria-pressed={armed}>{armed ? "Casa protegida" : "Sistema desarmado"}</button></div>
+      <div className="topbar-actions"><div className="connection-pill"><span className={realtimeReady ? "dot online" : "dot"} /> {realtimeReady ? "Tiempo real activo" : remoteReady ? "API conectada" : "Sin conexión"}</div><button className={armed ? "arm-button armed" : "arm-button"} onClick={() => setArmed((current) => !current)} aria-pressed={armed}>{armed ? "Casa protegida" : "Sistema desarmado"}</button></div>
     </header>
     <main className="page">
       <section className="hero"><div><p className="eyebrow">Estado de la vivienda</p><div className="hero-row"><h1>{houseStatus}</h1><span className={"status-badge " + houseStatusTone}><span className="dot" />{houseStatus}</span></div><p className="muted">Última sincronización: {updatedAt} · {onlineCount}/{devices.length} dispositivos en línea.</p></div><div className="hero-actions"><button className="button primary" onClick={simulateMotion}>Simular movimiento</button><button className="button secondary" onClick={simulateDoor}>Abrir/cerrar puerta</button></div></section>
@@ -184,7 +161,7 @@ function App() {
       {view === "events" && <section className="content-panel"><div className="section-heading"><div><p className="eyebrow">Auditoría</p><h2>Historial de eventos</h2></div><span className="count-chip">{events.length} eventos</span></div><div className="event-list full">{events.map((event) => <EventRow key={event.id} event={event} />)}</div></section>}
       {view === "cameras" && <section className="content-panel"><div className="section-heading"><div><p className="eyebrow">Visualización</p><h2>Cámaras en vivo</h2></div><span className="count-chip">{cameras.length} streams</span></div><div className="camera-grid">{cameras.map((camera) => <CameraCard key={camera.id} camera={camera} />)}</div></section>}
     </main>
-    <footer className="footer"><span>BigCalm PMV · {remoteReady ? "PostgreSQL activo" : "Telemetría local de respaldo"} · Sin acceso a hardware físico</span><span>Preparado para MQTT + WebSocket</span></footer>
+    <footer className="footer"><span>BigCalm PMV · {remoteReady ? "PostgreSQL activo" : "Último estado conocido"} · Sin acceso a hardware físico</span><span>SSE activo · MQTT preparado</span></footer>
   </div>;
 }
 
