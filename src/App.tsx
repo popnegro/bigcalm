@@ -75,7 +75,7 @@ function App() {
   const simulateMotion = () => {
     const device = devices.find((item) => item.id === "motion-living");
     if (!device) return;
-    setDevices((current) => current.map((item) => item.id === device.id ? { ...item, value: "Movimiento detectado", lastSeen: "Ahora" } : item));
+    setDevices((current) => current.map((item) => item.id === device.id ? { ...item, value: "Movimiento detectado", lastSeen: "Ahora", status: armed ? "alert" : "online" } : item));
     pushEvent(device, "Movimiento detectado en living", armed ? "warning" : "info");
   };
 
@@ -83,7 +83,7 @@ function App() {
     const device = devices.find((item) => item.id === "door-front");
     if (!device) return;
     const nextOpen = device.value !== "Abierta";
-    setDevices((current) => current.map((item) => item.id === device.id ? { ...item, value: nextOpen ? "Abierta" : "Cerrada", lastSeen: "Ahora" } : item));
+    setDevices((current) => current.map((item) => item.id === device.id ? { ...item, value: nextOpen ? "Abierta" : "Cerrada", lastSeen: "Ahora", status: nextOpen && armed ? "alert" : "online" } : item));
     pushEvent(device, nextOpen ? "Puerta principal abierta" : "Puerta principal cerrada", nextOpen && armed ? "warning" : "info");
   };
 
