@@ -4,6 +4,7 @@ export interface RealtimeTelemetry {
   type: "telemetry";
   deviceId: string;
   deviceKey: string;
+  deviceName: string;
   readings: Partial<Record<keyof HomeMetrics, number>>;
   state: {
     status?: Device["status"];
