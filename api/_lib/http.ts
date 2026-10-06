@@ -1,4 +1,8 @@
-import type { VercelResponse } from "@vercel/node";
+import type { VercelRequest, VercelResponse } from "@vercel/node";
+
+export function method(req: VercelRequest): string {
+  return (req.method ?? "GET").toUpperCase();
+}
 
 export function json(res: VercelResponse, status: number, body: unknown): VercelResponse {
   res.status(status).setHeader("Cache-Control", "no-store").json(body);
