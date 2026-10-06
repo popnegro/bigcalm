@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "start": "node index.mjs",
-    "check": "node --check index.mjs"
+    "check": "node --check index.mjs",
+    "test": "node test.mjs"
   },
   "dependencies": {
     "aedes": "^1.2.0",
