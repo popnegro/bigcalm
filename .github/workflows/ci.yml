@@ -30,3 +30,5 @@ jobs:
         run: node --check services/mqtt-bridge/index.mjs
       - name: Check MQTT broker
         run: node --check services/mqtt-broker/index.mjs
+      - name: Test MQTT broker
+        run: cd services/mqtt-broker && npm install && npm test
