@@ -98,6 +98,28 @@ async function initialize(sql: Database): Promise<void> {
     `;
   }
 
+  const defaultStates: Record<string, Record<string, string>> = {
+    "gateway-01": { label: "LAN + Internet" },
+    "door-front": { value: "Cerrada" },
+    "motion-living": { value: "Sin movimiento" },
+    "window-bed": { value: "Cerrada" },
+    "smoke-kitchen": { value: "Normal" },
+    "water-laundry": { value: "Seco" },
+    "cam-patio": { value: "1080p / Live" },
+    "cam-garage": { value: "1080p / Live" },
+  };
+
+  for (const [deviceId, state] of Object.entries(defaultStates)) {
+    await sql`
+      UPDATE devices
+      SET state = CASE
+        WHEN state = '{}'::jsonb THEN ${JSON.stringify(state)}::jsonb
+        ELSE state
+      END
+      WHERE id = ${deviceId}
+    `;
+  }
+
   const seedMetrics = [
     ['gateway-01', 'temperature', 23.4, '°C'],
     ['gateway-01', 'humidity', 48, '%'],
