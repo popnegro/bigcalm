@@ -5,17 +5,31 @@ const apiUrl = required("BIGCALM_API_URL").replace(/\/$/, "");
 const ingestToken = required("BIGCALM_INGEST_TOKEN");
 const topic = process.env.BIGCALM_MQTT_TOPIC ?? "bigcalm/+/telemetry";
 const clientId = process.env.BIGCALM_MQTT_CLIENT_ID ?? `bigcalm-bridge-${process.pid}`;
+const port = Number(process.env.PORT ?? 10000);
 
 const client = mqtt.connect(brokerUrl, {
   clientId,
   username: process.env.BIGCALM_MQTT_USERNAME,
   password: process.env.BIGCALM_MQTT_PASSWORD,
-  protocolVersion: 5,
+  protocolVersion: Number(process.env.BIGCALM_MQTT_PROTOCOL_VERSION ?? 4),
   clean: true,
   reconnectPeriod: 1_000,
   connectTimeout: 10_000,
   keepalive: 30,
 });
+
+import http from "node:http";
+
+const healthServer = http.createServer((request, response) => {
+  if (request.url === "/health") {
+    response.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" });
+    response.end(JSON.stringify({ ok: true, service: "bigcalm-mqtt-bridge" }));
+    return;
+  }
+  response.writeHead(404);
+  response.end();
+});
+healthServer.listen(port, "0.0.0.0", () => console.log(JSON.stringify({ service: "bigcalm-mqtt-bridge", status: "health_ready", port })));
 
 client.on("connect", () => {
   console.log(JSON.stringify({ service: "bigcalm-mqtt-bridge", status: "connected", topic }));
@@ -85,5 +99,5 @@ function required(name) {
 }
 
 function shutdown() {
-  client.end(false, {}, () => process.exit(0));
+  client.end(false, {}, () => healthServer.close(() => process.exit(0)));
 }
