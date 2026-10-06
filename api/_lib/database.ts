@@ -10,7 +10,12 @@ export function getDatabase(): Database | null {
 }
 
 export function ensureDatabase(sql: Database): Promise<void> {
-  initPromise ??= initialize(sql);
+  if (!initPromise) {
+    initPromise = initialize(sql).catch((error) => {
+      initPromise = null;
+      throw error;
+    });
+  }
   return initPromise;
 }
 
