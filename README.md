@@ -47,3 +47,25 @@ La UI consulta `GET /api/state` cada 5 segundos. El backend usa `@neondatabase/s
 - `BIGCALM_INGEST_TOKEN` — token privado para dispositivos que envían telemetría.
 
 Para producción, añadir autenticación de usuario para el dashboard y autorización por vivienda antes de exponer datos reales de una casa.
+
+## Tiempo real
+
+El dashboard obtiene un snapshot inicial con `GET /api/state` y después mantiene una conexión `EventSource` a `GET /api/events`.
+
+El backend usa PostgreSQL `LISTEN/NOTIFY`: cada `POST /api/telemetry` persiste la lectura y publica un evento en el canal `bigcalm_events`. El navegador recibe únicamente los cambios, sin polling periódico. `EventSource` se reconecta automáticamente; al reconectar, el cliente vuelve a pedir el snapshot para recuperar estado perdido.
+
+### MQTT
+
+El servicio `services/mqtt-bridge` mantiene una conexión MQTT persistente, suscribe `bigcalm/+/telemetry` y reenvía cada mensaje autenticado a `/api/telemetry`.
+
+Topic: `bigcalm/{deviceKey}/telemetry`
+
+Variables del bridge: `BIGCALM_MQTT_URL`, `BIGCALM_MQTT_USERNAME`, `BIGCALM_MQTT_PASSWORD`, `BIGCALM_MQTT_TOPIC`, `BIGCALM_MQTT_CLIENT_ID`, `BIGCALM_API_URL`, `BIGCALM_INGEST_TOKEN`.
+
+El broker MQTT debe ser un servicio persistente real; no se recomienda usar un broker público para datos domésticos. El token de ingestión nunca llega al navegador.
+
+## Arquitectura de tiempo real
+
+ESP32 → MQTT broker → `services/mqtt-bridge` → `POST /api/telemetry` → Neon PostgreSQL → `NOTIFY bigcalm_events` → `/api/events` (SSE) → Dashboard.
+
+Se elige SSE para la UI porque el flujo navegador ← servidor es predominantemente unidireccional y conserva la reconexión nativa de `EventSource`. WebSockets quedan disponibles para una futura capa bidireccional (comandos, presencia, controladores).
