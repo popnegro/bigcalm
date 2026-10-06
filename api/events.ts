@@ -36,7 +36,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     res.setHeader("Connection", "keep-alive");
     res.setHeader("X-Accel-Buffering", "no");
-    res.write("event: ready\ndata: {\\"connected\\":true}\n\n");
+    res.write("event: ready\ndata: connected\n\n");
 
     client.on("notification", (message) => {
       if (closed || !message.payload) return;
