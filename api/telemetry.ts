@@ -73,20 +73,58 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       `;
     }
 
+    let normalizedEvent: {
+      type: string;
+      severity: "info" | "warning" | "critical";
+      message: string;
+    } | null = null;
+
     if (event) {
       const severity = typeof event.severity === "string" && ["info", "warning", "critical"].includes(event.severity)
-        ? event.severity
+        ? event.severity as "info" | "warning" | "critical"
         : "info";
       const eventType = typeof event.type === "string" ? event.type.slice(0, 80) : "telemetry";
       const message = typeof event.message === "string" && event.message.trim()
         ? event.message.slice(0, 300)
         : "Telemetría recibida";
 
+      normalizedEvent = { type: eventType, severity, message };
+
       await sql`
         INSERT INTO events (device_id, event_type, severity, message, payload)
         VALUES (${device[0].id}, ${eventType}, ${severity}, ${message}, ${JSON.stringify(event)}::jsonb)
       `;
     }
+
+    const normalizedReadings = Object.fromEntries(
+      Object.entries(readings)
+        .filter(([metric, value]) => allowedMetrics.has(metric) && typeof value === "number" && Number.isFinite(value))
+        .map(([metric, value]) => [metric, value]),
+    );
+
+    const realtimeState = {
+      status,
+      ...(battery === null ? {} : { batteryPercent: battery }),
+      ...(typeof state.value === "string" ? { value: state.value.slice(0, 120) } : {}),
+      ...(typeof state.label === "string" ? { label: state.label.slice(0, 120) } : {}),
+    };
+
+    await sql`
+      SELECT pg_notify(
+        "bigcalm_events",
+        ${JSON.stringify({
+          type: "telemetry",
+          deviceId: device[0].id,
+          deviceKey: body.deviceKey,
+          readings: normalizedReadings,
+          state: realtimeState,
+          event: normalizedEvent
+            ? { ...normalizedEvent, timestamp: new Date().toISOString() }
+            : null,
+          occurredAt: new Date().toISOString(),
+        })}
+      )
+    `;
 
     return json(res, 202, {
       accepted: true,
