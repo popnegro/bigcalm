@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { initialDevices, initialEvents, initialMetrics } from "./data";
+import { fetchRemoteState } from "./api-client";
 import type { Device, HouseEvent, HomeMetrics, ViewId } from "./types";
 import { clamp, nowLabel, severityLabel, statusLabel } from "./utils";
 
@@ -20,6 +21,7 @@ function App() {
   const [events, setEvents] = useState<HouseEvent[]>(initialEvents);
   const [armed, setArmed] = useState(() => window.localStorage.getItem("bigcalm-armed") !== "false");
   const [updatedAt, setUpdatedAt] = useState(nowLabel());
+  const [remoteReady, setRemoteReady] = useState(false);
 
   const onlineCount = devices.filter((device) => device.status === "online").length;
   const alertCount = devices.filter((device) => device.status === "alert").length;
@@ -39,6 +41,35 @@ function App() {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+    let timer: number | undefined;
+
+    const syncRemoteState = async () => {
+      try {
+        const state = await fetchRemoteState();
+        if (cancelled) return;
+        setMetrics(state.metrics);
+        setDevices(state.devices);
+        setEvents(state.events);
+        setUpdatedAt(nowLabel());
+        setRemoteReady(true);
+      } catch {
+        if (!cancelled) setRemoteReady(false);
+      }
+    };
+
+    void syncRemoteState();
+    timer = window.setInterval(() => void syncRemoteState(), 5000);
+
+    return () => {
+      cancelled = true;
+      if (timer !== undefined) window.clearInterval(timer);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (remoteReady) return;
+
     const timer = window.setInterval(() => {
       setMetrics((current) => ({
         temperature: Number(clamp(current.temperature + (Math.random() - 0.5) * 0.6, 18, 30).toFixed(1)),
@@ -62,8 +93,9 @@ function App() {
         return { ...device, lastSeen: "Hace <1 min" };
       }));
     }, 4000);
+
     return () => window.clearInterval(timer);
-  }, []);
+  }, [remoteReady]);
 
   useEffect(() => { document.title = "BigCalm — " + houseStatus; }, [houseStatus]);
 
@@ -104,7 +136,7 @@ function App() {
     <header className="topbar">
       <div className="brand-lockup"><div className="brand-mark" aria-hidden="true"><span /></div><div><strong>BigCalm</strong><small>Monitoreo doméstico</small></div></div>
       <nav className="main-nav" aria-label="Navegación principal">{navItems.map((item) => <button key={item.id} className={view === item.id ? "nav-button active" : "nav-button"} onClick={() => navigate(item.id)}>{item.label}</button>)}</nav>
-      <div className="topbar-actions"><div className="connection-pill"><span className="dot online" /> Sistema conectado</div><button className={armed ? "arm-button armed" : "arm-button"} onClick={() => setArmed((current) => !current)} aria-pressed={armed}>{armed ? "Casa protegida" : "Sistema desarmado"}</button></div>
+      <div className="topbar-actions"><div className="connection-pill"><span className="dot online" /> {remoteReady ? "API conectada" : "Modo demo local"}</div><button className={armed ? "arm-button armed" : "arm-button"} onClick={() => setArmed((current) => !current)} aria-pressed={armed}>{armed ? "Casa protegida" : "Sistema desarmado"}</button></div>
     </header>
     <main className="page">
       <section className="hero"><div><p className="eyebrow">Estado de la vivienda</p><div className="hero-row"><h1>{houseStatus}</h1><span className={"status-badge " + houseStatusTone}><span className="dot" />{houseStatus}</span></div><p className="muted">Última sincronización: {updatedAt} · {onlineCount}/{devices.length} dispositivos en línea.</p></div><div className="hero-actions"><button className="button primary" onClick={simulateMotion}>Simular movimiento</button><button className="button secondary" onClick={simulateDoor}>Abrir/cerrar puerta</button></div></section>
@@ -117,7 +149,7 @@ function App() {
       {view === "events" && <section className="content-panel"><div className="section-heading"><div><p className="eyebrow">Auditoría</p><h2>Historial de eventos</h2></div><span className="count-chip">{events.length} eventos</span></div><div className="event-list full">{events.map((event) => <EventRow key={event.id} event={event} />)}</div></section>}
       {view === "cameras" && <section className="content-panel"><div className="section-heading"><div><p className="eyebrow">Visualización</p><h2>Cámaras en vivo</h2></div><span className="count-chip">{cameras.length} streams</span></div><div className="camera-grid">{cameras.map((camera) => <CameraCard key={camera.id} camera={camera} />)}</div></section>}
     </main>
-    <footer className="footer"><span>BigCalm PMV · Telemetría simulada · Sin acceso a hardware real</span><span>Preparado para API + MQTT + WebSocket</span></footer>
+    <footer className="footer"><span>BigCalm PMV · {remoteReady ? "PostgreSQL activo" : "Telemetría local de respaldo"} · Sin acceso a hardware físico</span><span>Preparado para MQTT + WebSocket</span></footer>
   </div>;
 }
 
