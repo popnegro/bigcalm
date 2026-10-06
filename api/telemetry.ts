@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { ensureDatabase, getDatabase } from "./_lib/database";
-import { cors, json, method } from "./_lib/http";
+import { ensureDatabase, getDatabase } from "./_lib/database.js";
+import { cors, json, method } from "./_lib/http.js";
 
 const allowedMetrics = new Set(["temperature", "humidity", "power", "wifi"]);
 
