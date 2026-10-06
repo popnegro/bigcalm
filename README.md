@@ -30,3 +30,20 @@ Validación:
 Sensores/ESP32 y cámaras -> gateway doméstico -> HTTPS/MQTT -> API/event processor -> PostgreSQL/Neon -> WebSocket/SSE -> BigCalm UI.
 
 El PMV no controla hardware real ni expone RTSP directamente a Internet. Antes de incorporar comandos de apertura, cerraduras o alarmas deben existir identidad, autorización, auditoría, rate limiting y gestión segura de credenciales.
+
+## API real
+
+La UI consulta `GET /api/state` cada 5 segundos. El backend usa `@neondatabase/serverless` y crea de forma idempotente las tablas base cuando existe `DATABASE_URL`.
+
+### Endpoints
+
+- `GET /api/health` — salud de la API y PostgreSQL.
+- `GET /api/state` — casa, métricas, dispositivos y eventos recientes.
+- `POST /api/telemetry` — ingestión autenticada de lecturas y eventos.
+
+### Variables
+
+- `DATABASE_URL` — connection string de Neon.
+- `BIGCALM_INGEST_TOKEN` — token privado para dispositivos que envían telemetría.
+
+Para producción, añadir autenticación de usuario para el dashboard y autorización por vivienda antes de exponer datos reales de una casa.
