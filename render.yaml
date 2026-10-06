@@ -2,7 +2,7 @@ services:
   - type: web
     name: bigcalm-mqtt-broker
     runtime: node
-    plan: free
+    plan: 0.5c-512mb
     region: oregon
     repo: https://github.com/popnegro/bigcalm.git
     branch: feat/pmv-monitoring
@@ -52,6 +52,6 @@ services:
       - key: BIGCALM_INGEST_TOKEN
         sync: false
       - key: BIGCALM_API_URL
-        value: https://bigcalm-serverless-pwy5l3cf4-popnegros-projects.vercel.app
+        sync: false
       - key: PORT
         value: "10000"
