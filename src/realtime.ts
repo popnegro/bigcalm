@@ -31,7 +31,6 @@ export function subscribeToRealtime({ onOpen, onTelemetry, onError }: RealtimeHa
   const source = new EventSource("/api/events");
 
   source.addEventListener("open", onOpen);
-  source.addEventListener("ready", onOpen);
   source.addEventListener("telemetry", (message) => {
     try {
       const payload = JSON.parse((message as MessageEvent<string>).data) as RealtimeTelemetry;
