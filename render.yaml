@@ -1,0 +1,57 @@
+services:
+  - type: web
+    name: bigcalm-mqtt-broker
+    runtime: node
+    plan: free
+    region: oregon
+    repo: https://github.com/popnegro/bigcalm.git
+    branch: feat/pmv-monitoring
+    buildCommand: cd services/mqtt-broker && npm install
+    startCommand: cd services/mqtt-broker && npm start
+    healthCheckPath: /health
+    envVars:
+      - key: BIGCALM_MQTT_BRIDGE_USER
+        value: bigcalm-bridge
+      - key: BIGCALM_MQTT_BRIDGE_PASSWORD
+        generateValue: true
+      - key: BIGCALM_MQTT_DEVICE_PASSWORD
+        generateValue: true
+      - key: PORT
+        value: "10000"
+
+  - type: worker
+    name: bigcalm-mqtt-bridge
+    runtime: node
+    plan: starter
+    region: oregon
+    repo: https://github.com/popnegro/bigcalm.git
+    branch: feat/pmv-monitoring
+    buildCommand: cd services/mqtt-bridge && npm install
+    startCommand: cd services/mqtt-bridge && npm start
+    envVars:
+      - key: BIGCALM_MQTT_HOST
+        fromService:
+          name: bigcalm-mqtt-broker
+          type: web
+          property: host
+      - key: BIGCALM_MQTT_PORT
+        fromService:
+          name: bigcalm-mqtt-broker
+          type: web
+          property: port
+      - key: BIGCALM_MQTT_BRIDGE_USER
+        fromService:
+          name: bigcalm-mqtt-broker
+          type: web
+          envVarKey: BIGCALM_MQTT_BRIDGE_USER
+      - key: BIGCALM_MQTT_BRIDGE_PASSWORD
+        fromService:
+          name: bigcalm-mqtt-broker
+          type: web
+          envVarKey: BIGCALM_MQTT_BRIDGE_PASSWORD
+      - key: BIGCALM_INGEST_TOKEN
+        sync: false
+      - key: BIGCALM_API_URL
+        value: https://bigcalm-serverless-pwy5l3cf4-popnegros-projects.vercel.app
+      - key: PORT
+        value: "10000"
