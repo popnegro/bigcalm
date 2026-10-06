@@ -1,0 +1,14 @@
+{
+  "name": "bigcalm-mqtt-broker",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "start": "node index.mjs",
+    "check": "node --check index.mjs"
+  },
+  "dependencies": {
+    "aedes": "^1.2.0",
+    "websocket-stream": "^5.5.2"
+  }
+}
