@@ -111,7 +111,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     await sql`
       SELECT pg_notify(
-        "bigcalm_events",
+        'bigcalm_events',
         ${JSON.stringify({
           type: "telemetry",
           deviceId: device[0].id,
