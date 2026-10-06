@@ -1,4 +1,4 @@
-# BigCalm
+# bigcalm-serverless
 
 PMV de monitoreo doméstico enfocado en una operación clara: saber si la casa está bien, qué cambió y qué requiere atención.
 
