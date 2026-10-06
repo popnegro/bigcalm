@@ -72,14 +72,15 @@ function App() {
         };
       }));
 
-      if (payload.event) {
+      const incomingEvent = payload.event;
+      if (incomingEvent) {
         setEvents((current) => [{
           id: "evt-" + payload.occurredAt,
           timestamp: nowLabel(),
           deviceId: payload.deviceId,
           deviceName: payload.deviceName,
-          message: payload.event.message,
-          severity: payload.event.severity,
+          message: incomingEvent.message,
+          severity: incomingEvent.severity,
         }, ...current].slice(0, 30));
       }
 
