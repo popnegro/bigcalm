@@ -39,7 +39,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     await ensureDatabase(sql);
 
     const device = await sql`
-      SELECT id, home_id
+      SELECT id, home_id, name
       FROM devices
       WHERE device_key = ${body.deviceKey}
       LIMIT 1
@@ -116,6 +116,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           type: "telemetry",
           deviceId: device[0].id,
           deviceKey: body.deviceKey,
+          deviceName: device[0].name,
           readings: normalizedReadings,
           state: realtimeState,
           event: normalizedEvent
