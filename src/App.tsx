@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { initialDevices, initialEvents, initialMetrics } from "./data";
 import { fetchRemoteState } from "./api-client";
+import { subscribeToRealtime, type RealtimeTelemetry } from "./realtime";
 import type { Device, HouseEvent, HomeMetrics, ViewId } from "./types";
 import { clamp, nowLabel, severityLabel, statusLabel } from "./utils";
 
@@ -42,7 +43,6 @@ function App() {
 
   useEffect(() => {
     let cancelled = false;
-    let timer: number | undefined;
 
     const syncRemoteState = async () => {
       try {
@@ -51,6 +51,7 @@ function App() {
         setMetrics(state.metrics);
         setDevices(state.devices);
         setEvents(state.events);
+        setArmed(state.home.armed);
         setUpdatedAt(nowLabel());
         setRemoteReady(true);
       } catch {
@@ -58,12 +59,45 @@ function App() {
       }
     };
 
+    const applyRealtime = (payload: RealtimeTelemetry) => {
+      setMetrics((current) => ({ ...current, ...payload.readings }));
+      setDevices((current) => current.map((device) => {
+        if (device.id !== payload.deviceId) return device;
+        return {
+          ...device,
+          status: payload.state.status ?? device.status,
+          battery: payload.state.batteryPercent ?? device.battery,
+          value: payload.state.value ?? payload.state.label ?? device.value,
+          lastSeen: "Ahora",
+        };
+      }));
+
+      if (payload.event) {
+        setEvents((current) => [{
+          id: "evt-" + payload.occurredAt,
+          timestamp: nowLabel(),
+          deviceId: payload.deviceId,
+          deviceName: devices.find((device) => device.id === payload.deviceId)?.name ?? payload.deviceKey,
+          message: payload.event.message,
+          severity: payload.event.severity,
+        }, ...current].slice(0, 30));
+      }
+
+      setUpdatedAt(nowLabel());
+      setRemoteReady(true);
+    };
+
+    const unsubscribe = subscribeToRealtime({
+      onOpen: () => void syncRemoteState(),
+      onTelemetry: applyRealtime,
+      onError: () => undefined,
+    });
+
     void syncRemoteState();
-    timer = window.setInterval(() => void syncRemoteState(), 5000);
 
     return () => {
       cancelled = true;
-      if (timer !== undefined) window.clearInterval(timer);
+      unsubscribe();
     };
   }, []);
 
