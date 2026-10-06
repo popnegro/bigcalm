@@ -26,3 +26,5 @@ jobs:
         run: npm run check
       - name: Build
         run: npm run build
+      - name: Check MQTT bridge
+        run: node --check services/mqtt-bridge/index.mjs
