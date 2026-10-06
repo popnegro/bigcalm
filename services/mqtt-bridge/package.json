@@ -1,0 +1,13 @@
+{
+  "name": "bigcalm-mqtt-bridge",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "start": "node index.mjs",
+    "check": "node --check index.mjs"
+  },
+  "dependencies": {
+    "mqtt": "^5.15.2"
+  }
+}
