@@ -77,7 +77,7 @@ function App() {
           id: "evt-" + payload.occurredAt,
           timestamp: nowLabel(),
           deviceId: payload.deviceId,
-          deviceName: devices.find((device) => device.id === payload.deviceId)?.name ?? payload.deviceKey,
+          deviceName: payload.deviceName,
           message: payload.event.message,
           severity: payload.event.severity,
         }, ...current].slice(0, 30));
