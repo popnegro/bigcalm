@@ -1,6 +1,6 @@
 import mqtt from "mqtt";
 
-const brokerUrl = required("BIGCALM_MQTT_URL");
+const brokerUrl = mqttUrl();
 const apiUrl = required("BIGCALM_API_URL").replace(/\/$/, "");
 const ingestToken = required("BIGCALM_INGEST_TOKEN");
 const topic = process.env.BIGCALM_MQTT_TOPIC ?? "bigcalm/+/telemetry";
@@ -90,6 +90,13 @@ function extractDeviceKey(messageTopic) {
 
 function isRecord(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function mqttUrl() {
+  if (process.env.BIGCALM_MQTT_URL) return process.env.BIGCALM_MQTT_URL;
+  const host = required("BIGCALM_MQTT_HOST");
+  const port = required("BIGCALM_MQTT_PORT");
+  return `ws://${host}:${port}/mqtt`;
 }
 
 function required(name) {
