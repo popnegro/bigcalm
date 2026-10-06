@@ -26,3 +26,22 @@ WHERE NOT EXISTS (
   SELECT 1 FROM telemetry t
   WHERE t.device_id = seed.device_id AND t.metric = seed.metric
 );
+
+
+UPDATE devices SET state = '{"label":"LAN + Internet"}'::jsonb
+WHERE id = 'gateway-01' AND state = '{}'::jsonb;
+
+UPDATE devices SET state = '{"value":"Cerrada"}'::jsonb
+WHERE id IN ('door-front','window-bed') AND state = '{}'::jsonb;
+
+UPDATE devices SET state = '{"value":"Sin movimiento"}'::jsonb
+WHERE id = 'motion-living' AND state = '{}'::jsonb;
+
+UPDATE devices SET state = '{"value":"Normal"}'::jsonb
+WHERE id = 'smoke-kitchen' AND state = '{}'::jsonb;
+
+UPDATE devices SET state = '{"value":"Seco"}'::jsonb
+WHERE id = 'water-laundry' AND state = '{}'::jsonb;
+
+UPDATE devices SET state = '{"value":"1080p / Live"}'::jsonb
+WHERE id IN ('cam-patio','cam-garage') AND state = '{}'::jsonb;
