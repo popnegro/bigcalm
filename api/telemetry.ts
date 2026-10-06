@@ -4,6 +4,8 @@ import { cors, json, method } from "./_lib/http.js";
 
 const allowedMetrics = new Set(["temperature", "humidity", "power", "wifi"]);
 
+type DeviceLookupRow = { id: string; home_id: string; name: string };
+
 interface TelemetryBody {
   deviceKey?: unknown;
   readings?: unknown;
@@ -43,7 +45,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       FROM devices
       WHERE device_key = ${body.deviceKey}
       LIMIT 1
-    `;
+    ` as unknown as DeviceLookupRow[];
     if (!device[0]) return json(res, 404, { error: "DEVICE_NOT_FOUND" });
 
     const status = typeof state.status === "string" && ["online", "offline", "alert"].includes(state.status)
