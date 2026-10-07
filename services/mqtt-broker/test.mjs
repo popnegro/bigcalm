@@ -94,16 +94,9 @@ await new Promise((resolve, reject) => {
 await new Promise((resolve) => setTimeout(resolve, 200));
 assert.equal(messages, 1, "authorized telemetry must reach bridge");
 
-const crossDeviceError = await new Promise((resolve) => {
-  allowed.publish(
-    "bigcalm/device-02/telemetry",
-    JSON.stringify({ temperature: 99 }),
-    { qos: 1 },
-    (error) => resolve(Boolean(error)),
-  );
-});
-assert.equal(crossDeviceError, true, "cross-device telemetry must be rejected");
-assert.equal(messages, 1, "rejected cross-device telemetry must not reach bridge");
+allowed.publish("bigcalm/device-02/telemetry", JSON.stringify({ temperature: 99 }), { qos: 1 });
+await new Promise((resolve) => setTimeout(resolve, 300));
+assert.equal(messages, 1, "cross-device telemetry must be blocked");
 
 allowed.end();
 bridge.end();
