@@ -35,7 +35,7 @@ const broker = await Aedes.createBroker({
     }
 
     const expected = "bigcalm/" + String(client.user).slice(0, 120) + "/telemetry";
-    callback(null, packet.topic === expected ? null : new Error("PUBLISH_NOT_ALLOWED"));
+    callback(packet.topic === expected ? null : new Error("PUBLISH_NOT_ALLOWED"));
   },
 
   authorizeSubscribe(client, subscription, callback) {
@@ -45,7 +45,7 @@ const broker = await Aedes.createBroker({
     }
 
     const expected = "bigcalm/" + String(client.user).slice(0, 120) + "/commands";
-    callback(null, subscription.topic === expected ? subscription : null);
+    callback(subscription.topic === expected ? null : new Error("SUBSCRIBE_NOT_ALLOWED"));
   },
 });
 
