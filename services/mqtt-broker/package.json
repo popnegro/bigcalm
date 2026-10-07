@@ -1,0 +1,16 @@
+{
+  "name": "bigcalm-mqtt-broker",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "start": "node index.mjs",
+    "check": "node --check index.mjs",
+    "test": "node test.mjs"
+  },
+  "dependencies": {
+    "aedes": "^1.2.0",
+    "ws": "^8.22.0",
+    "mqtt": "^5.15.2"
+  }
+}
