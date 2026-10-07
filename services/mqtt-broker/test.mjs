@@ -22,6 +22,7 @@ const broker = await Aedes.createBroker({
 
     if (user.startsWith("device-") && pass === devicePassword) {
       client.user = user;
+      client.deviceKey = user;
       callback(null, true);
       return;
     }
@@ -31,8 +32,8 @@ const broker = await Aedes.createBroker({
   authorizePublish(client, packet, callback) {
     if (client.user === "bridge") return callback(null);
 
-    const expected = `bigcalm/${String(client.user)}/telemetry`;
-    callback(null, packet.topic === expected ? null : new Error("PUBLISH_NOT_ALLOWED"));
+    const expected = `bigcalm/${String(client.deviceKey ?? client.user)}/telemetry`;
+    callback(packet.topic === expected ? null : new Error("PUBLISH_NOT_ALLOWED"));
   },
 });
 
