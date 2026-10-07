@@ -3,6 +3,7 @@ import mqtt from "mqtt";
 const brokerUrl = mqttUrl();
 const apiUrl = required("BIGCALM_API_URL").replace(/\/$/, "");
 const ingestToken = required("BIGCALM_INGEST_TOKEN");
+const vercelProtectionBypass = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
 const topic = process.env.BIGCALM_MQTT_TOPIC ?? "bigcalm/+/telemetry";
 const clientId = process.env.BIGCALM_MQTT_CLIENT_ID ?? `bigcalm-bridge-${process.pid}`;
 const port = Number(process.env.PORT ?? 10000);
