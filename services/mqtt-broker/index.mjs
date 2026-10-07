@@ -25,6 +25,7 @@ const broker = await Aedes.createBroker({
     }
 
     client.user = user.slice(0, 120);
+    client.deviceKey = user.slice(0, 120);
     callback(null, true);
   },
 
@@ -34,7 +35,7 @@ const broker = await Aedes.createBroker({
       return;
     }
 
-    const expected = "bigcalm/" + String(client.user).slice(0, 120) + "/telemetry";
+    const expected = "bigcalm/" + String(client.deviceKey ?? client.user).slice(0, 120) + "/telemetry";
     callback(packet.topic === expected ? null : new Error("PUBLISH_NOT_ALLOWED"));
   },
 
@@ -44,7 +45,7 @@ const broker = await Aedes.createBroker({
       return;
     }
 
-    const expected = "bigcalm/" + String(client.user).slice(0, 120) + "/commands";
+    const expected = "bigcalm/" + String(client.deviceKey ?? client.user).slice(0, 120) + "/commands";
     callback(subscription.topic === expected ? null : new Error("SUBSCRIBE_NOT_ALLOWED"));
   },
 });
