@@ -62,7 +62,13 @@ const connect = (options) => new Promise((resolve, reject) => {
 });
 
 const invalid = await Promise.race([
-  connect({ username: "device-01", password: "wrong" }).then(() => false),
+  connect({ username: "device-01", password: "wrong" }).then(
+    (client) => {
+      client.end();
+      return false;
+    },
+    () => true,
+  ),
   new Promise((resolve) => setTimeout(() => resolve(true), 1200)),
 ]);
 assert.equal(invalid, true, "invalid credentials must be rejected");
