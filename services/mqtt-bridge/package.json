@@ -8,6 +8,7 @@
     "check": "node --check index.mjs"
   },
   "dependencies": {
-    "mqtt": "^5.15.2"
+    "mqtt": "^5.15.2",
+    "@neondatabase/serverless": "^1.2.0"
   }
 }
